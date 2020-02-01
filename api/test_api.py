@@ -1,5 +1,4 @@
-from django.contrib.auth.models import User
-from .models import PortfolioHistory, Stocks
+from .models import PortfolioHistory, Stocks, User
 from django.test import Client, TestCase
 from .views import RESTAccountPortfolio
 from rest_auth.urls import LoginView
@@ -26,7 +25,7 @@ class StockTransactionTest(TestCase):
         
 
     def test_buy(self):
-        
+        # All stocks are assumed to cost $55. Why? Cause thats how it is.
         # Expected usage of buying
         data = {
             "symbol": "MSFT",
@@ -40,6 +39,7 @@ class StockTransactionTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(content['num_purchased'], 3)
         self.assertEqual(content['symbol'], 'MSFT')
+        self.assertEqual(content['current_balance'], 10000 - 55 * 3)
 
         # Buying 0 entries
         data = {
@@ -94,3 +94,4 @@ class StockTransactionTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(content['num_sold'], 3)
         self.assertEqual(content['num_owned'], 1)
+        self.assertEqual(content['current_balance'], 10000 + 55 * 3)

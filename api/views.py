@@ -49,25 +49,29 @@ class RESTAccountPortfolio(APIView):
                 "Invalid request": f"Cannot purchase {quantity} stocks"
             }
 
-        # if price * quantity <= user.balance:
-        else:
+        elif price * quantity <= owner.balance:
             try:
                 stock_entry = Stocks.objects.filter(owner=owner, symbol=symbol)[0]
                 stock_entry.quantity += quantity
                 stock_entry.date_last_modified = timezone.now()
                 stock_entry.save()
-                # user .balance -= price * quantity
+                
                 
             except IndexError as ie:
                 stock_entry = Stocks(owner=owner, symbol=symbol, quantity=quantity)
                 stock_entry.save()
             
+            owner.balance -= price * quantity
+            owner.save()
             response_data = {
                     "symbol": symbol,
                     "purchase_cost": quantity * price,
                     "num_owned": stock_entry.quantity,
-                    "num_purchased": quantity
+                    "num_purchased": quantity,
+                    "current_balance": owner.balance
                 }
+        else:
+            response_data = {"Invalid request": "User does not have sufficient funds for purchase"}
 
         return Response(response_data)
 
@@ -90,7 +94,7 @@ class RESTAccountPortfolio(APIView):
 
         price = 55.0 #query_price(symbol)
 
-        # if price * quantity <= user.balance:
+        
         if quantity <= 0:
             response_data = {"Invalid request": f"Cannot sell {quantity} stocks"}
         else:
@@ -107,12 +111,14 @@ class RESTAccountPortfolio(APIView):
                     num_owned = stock_entry.quantity
                     stock_entry.date_last_modified = timezone.now()
                     stock_entry.save()
-                # user.balance += price * quantity
+                owner.balance += price * quantity
+                owner.save()
                 response_data = {
                     "symbol": symbol,
                     "sell_price": quantity * price,
                     "num_owned": num_owned,
-                    "num_sold": quantity
+                    "num_sold": quantity,
+                    "current_balance": owner.balance
                 }
 
             except IndexError as ie:
