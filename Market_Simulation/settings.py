@@ -35,6 +35,11 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "rest_auth",
     'api.apps.ApiConfig',
+    'django.contrib.sites',
+    'allauth.socialaccount',
+    'allauth',
+    'allauth.account',
+    'rest_auth.registration',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -42,6 +47,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 ]
+
+SITE_ID = 1
+ACCOUNT_EMAIL_VERIFICATION = 'none'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

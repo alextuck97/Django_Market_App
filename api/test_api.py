@@ -68,7 +68,20 @@ class PortfolioModificationTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue("Invalid request" in content)
-    
+
+        # Buying too much
+        data = {
+            "symbol": "MSFT",
+            "quantity": 10000
+        }
+
+        response = self.client.post(url, data=data, \
+            content_type="application/json", HTTP_AUTHORIZATION=self.token)
+        content = json.loads(response.content)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue("Invalid request" in content)
+
     def test_sell(self):
         # Selling things you dont own
         url = "/api/transaction/"
