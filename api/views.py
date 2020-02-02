@@ -11,22 +11,36 @@ from rest_framework.authtoken.models import Token
 from django.utils import timezone
 # Create your views here.
 
+class AccountInformation(APIView):
 
-class RESTAccountPortfolio(APIView):
+    parser_classes = [JSONParser]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        token = request.headers['Authorization'].split(" ")[1]
+        user = Token.objects.filter(key=token)[0]
+        
+        owner = user.user
+
+        portfolio = Stocks.objects.filter(owner__username=owner.username). \
+            order_by("symbol")
+        serializer = StocksSerializer(portfolio, many=True)
+
+        response_data = {
+            "username": owner.username,
+            "email": owner.email,
+            "blance": owner.balance,
+            "portfolio": serializer.data
+        }
+
+        return Response(response_data)
+
+
+class AccountTransactions(APIView):
     
     parser_classes = [JSONParser]
     permission_classes = [IsAuthenticated]
     
-    def get(self, request):                   
-        '''
-        Return a user's portfolio.
-        Authentication token required.
-        '''
-        portfolio = Stocks.objects.filter(owner__username=request.data['owner']). \
-            order_by("symbol")
-        serializer = StocksSerializer(portfolio, many=True)
-        return Response(serializer.data)
-
     def post(self, request):
         '''
         A user requested to purchase a stock.

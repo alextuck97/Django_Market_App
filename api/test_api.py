@@ -1,11 +1,10 @@
 from .models import PortfolioHistory, Stocks, User
 from django.test import Client, TestCase
-from .views import RESTAccountPortfolio
 from rest_auth.urls import LoginView
 import json
 
 
-class StockTransactionTest(TestCase):
+class PortfolioModificationTest(TestCase):
     def setUp(self):
         self.client = Client()
         self.user = User.objects.create_user(username="test_user", password="testing123")
@@ -24,15 +23,31 @@ class StockTransactionTest(TestCase):
         self.token = "Token " + json.loads(response.content)['key']
         
 
+    def test_get_portfolio(self):
+        '''
+        What happens with no users? How would this situation happen where a client
+        has their key but the account no longer exists?
+        '''
+        url = "/api/account-summary/"
+        response = self.client.get(url, content_type="application/json", HTTP_AUTHORIZATION=self.token)
+        content = json.loads(response.content)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(content['username'], "test_user")
+        self.assertEqual(len(content['portfolio']), 2)
+
+
     def test_buy(self):
         # All stocks are assumed to cost $55. Why? Cause thats how it is.
         # Expected usage of buying
+        url = "/api/transaction/"
+       
         data = {
             "symbol": "MSFT",
             "quantity": 3
         }
 
-        response = self.client.post("/api/userportfolio/", data=data, \
+        response = self.client.post(url, data=data, \
             content_type="application/json", HTTP_AUTHORIZATION=self.token)
         content = json.loads(response.content)
        
@@ -47,7 +62,7 @@ class StockTransactionTest(TestCase):
             "quantity": 0
         }
 
-        response = self.client.post("/api/userportfolio/", data=data, \
+        response = self.client.post(url, data=data, \
             content_type="application/json", HTTP_AUTHORIZATION=self.token)
         content = json.loads(response.content)
 
@@ -56,12 +71,14 @@ class StockTransactionTest(TestCase):
     
     def test_sell(self):
         # Selling things you dont own
+        url = "/api/transaction/"
+        
         data = {
             "symbol": "MSFT",
             "quantity": 3
         }
 
-        response = self.client.delete("/api/userportfolio/", data=data,\
+        response = self.client.delete(url, data=data,\
             content_type="application/json", HTTP_AUTHORIZATION=self.token)
         content = json.loads(response.content)
         
@@ -74,7 +91,7 @@ class StockTransactionTest(TestCase):
             "quantity": -3
         }
 
-        response = self.client.delete("/api/userportfolio/", data=data,\
+        response = self.client.delete(url, data=data,\
             content_type="application/json", HTTP_AUTHORIZATION=self.token)
         content = json.loads(response.content)
         
@@ -87,7 +104,7 @@ class StockTransactionTest(TestCase):
             "quantity": 3
         }
 
-        response = self.client.delete("/api/userportfolio/", data=data,\
+        response = self.client.delete(url, data=data,\
             content_type="application/json", HTTP_AUTHORIZATION=self.token)
         content = json.loads(response.content)
         
@@ -95,3 +112,5 @@ class StockTransactionTest(TestCase):
         self.assertEqual(content['num_sold'], 3)
         self.assertEqual(content['num_owned'], 1)
         self.assertEqual(content['current_balance'], 10000 + 55 * 3)
+
+
