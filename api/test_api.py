@@ -1,16 +1,16 @@
-from .models import PortfolioHistory, Stocks, User
+from .models import Stocks, User
 from django.test import Client, TestCase
 from rest_auth.urls import LoginView
 import json
 
 
-class PortfolioModificationTest(TestCase):
+class WatchModificationTest(TestCase):
     def setUp(self):
         self.client = Client()
         self.user = User.objects.create_user(username="test_user", password="testing123")
         
-        s1 = Stocks(owner=self.user, symbol="AAPL", quantity=4)
-        s2 = Stocks(owner=self.user, symbol="SFWY", quantity=6)
+        s1 = Stocks(owner=self.user, symbol="AAPL")
+        s2 = Stocks(owner=self.user, symbol="SFWY")
         s1.save()
         s2.save()
 
@@ -37,14 +37,13 @@ class PortfolioModificationTest(TestCase):
         self.assertEqual(len(content['portfolio']), 2)
 
 
-    def test_buy(self):
-        # All stocks are assumed to cost $55. Why? Cause thats how it is.
-        # Expected usage of buying
-        url = "/api/transaction/"
+    def test_watch(self):
+        
+        # Expected usage of watching
+        url = "/api/watch/"
        
         data = {
-            "symbol": "MSFT",
-            "quantity": 3
+            "symbol": "MSFT"
         }
 
         response = self.client.post(url, data=data, \
@@ -52,14 +51,12 @@ class PortfolioModificationTest(TestCase):
         content = json.loads(response.content)
        
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(content['num_purchased'], 3)
         self.assertEqual(content['symbol'], 'MSFT')
-        self.assertEqual(content['current_balance'], 10000 - 55 * 3)
+        self.assertEqual(content['alert'], 'success')
 
-        # Buying 0 entries
+        # Watch a watched stock
         data = {
-            "symbol": "MSFT",
-            "quantity": 0
+            "symbol": "MSFT"
         }
 
         response = self.client.post(url, data=data, \
@@ -67,28 +64,15 @@ class PortfolioModificationTest(TestCase):
         content = json.loads(response.content)
 
         self.assertEqual(response.status_code, 200)
-        self.assertTrue("Invalid request" in content)
+        self.assertEqual(content["alert"], 'failure')
 
-        # Buying too much
-        data = {
-            "symbol": "MSFT",
-            "quantity": 10000
-        }
 
-        response = self.client.post(url, data=data, \
-            content_type="application/json", HTTP_AUTHORIZATION=self.token)
-        content = json.loads(response.content)
-
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue("Invalid request" in content)
-
-    def test_sell(self):
-        # Selling things you dont own
-        url = "/api/transaction/"
+    def test_unwatch(self):
+        # Unwatching things you dont watch
+        url = "/api/watch/"
         
         data = {
-            "symbol": "MSFT",
-            "quantity": 3
+            "symbol": "MSFT"
         }
 
         response = self.client.delete(url, data=data,\
@@ -96,12 +80,11 @@ class PortfolioModificationTest(TestCase):
         content = json.loads(response.content)
         
         self.assertEqual(response.status_code, 200)
-        self.assertTrue("Invalid request" in content)
+        self.assertEqual(content["alert"], 'failure')
 
-        # Selling negative things 
+        # Expected use 
         data = {
-            "symbol": "SFWY",
-            "quantity": -3
+            "symbol": "AAPL"
         }
 
         response = self.client.delete(url, data=data,\
@@ -109,21 +92,6 @@ class PortfolioModificationTest(TestCase):
         content = json.loads(response.content)
         
         self.assertEqual(response.status_code, 200)
-        self.assertTrue("Invalid request" in content)
-
-        # Expected selling
-        data = {
-            "symbol": "AAPL",
-            "quantity": 3
-        }
-
-        response = self.client.delete(url, data=data,\
-            content_type="application/json", HTTP_AUTHORIZATION=self.token)
-        content = json.loads(response.content)
-        
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(content['num_sold'], 3)
-        self.assertEqual(content['num_owned'], 1)
-        self.assertEqual(content['current_balance'], 10000 + 55 * 3)
+        self.assertEqual(content["alert"], 'success')
 
 
