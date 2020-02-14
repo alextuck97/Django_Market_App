@@ -32,15 +32,8 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     "rest_framework",
-    "rest_framework.authtoken",
-    "rest_auth",
     "corsheaders",
     'api.apps.ApiConfig',
-    'django.contrib.sites',
-    'allauth.socialaccount',
-    'allauth',
-    'allauth.account',
-    'rest_auth.registration',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -49,8 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 ]
 
-SITE_ID = 1
-ACCOUNT_EMAIL_VERIFICATION = 'none'
+#ACCOUNT_EMAIL_VERIFICATION = 'none'
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -99,7 +91,10 @@ DATABASES = {
 }
 
 
-AUTH_USER_MODEL = 'api.User'
+JWT_AUTH = {
+    'JWT_RESPONSE_PAYLOAD_HANDLER': 'Market_Simulation.utils.jwt_response_handler'
+}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
@@ -121,8 +116,11 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES' : (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
     )
 }
 # Internationalization

@@ -1,15 +1,34 @@
 from django.shortcuts import render
 from .models import Stocks
-from .serializers import StocksSerializer
+from .serializers import StocksSerializer, UserSerializer, UserSerializerWithToken
 from django.contrib.auth.models import User
+from rest_framework import permissions, status
 from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django.http.request import HttpRequest
+
 from rest_framework.authtoken.models import Token
 from django.utils import timezone
 # Create your views here.
+
+class CurrentUser(APIView):
+
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
+
+
+class CreateUser(APIView):
+
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request):
+        serializer = UserSerializerWithToken(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class AccountInformation(APIView):
 
