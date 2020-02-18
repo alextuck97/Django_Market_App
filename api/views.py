@@ -8,8 +8,10 @@ from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
-from rest_framework.authtoken.models import Token
+#from rest_framework.authtoken.models import Token
 from django.utils import timezone
+import base64
+import json
 # Create your views here.
 
 class CurrentUser(APIView):
@@ -37,17 +39,16 @@ class AccountInformation(APIView):
 
     def get(self, request):
         token = request.headers['Authorization'].split(" ")[1]
-        user = Token.objects.filter(key=token)[0]
+        payload = get_payload(token)
+        username = payload["username"]
+        user = User.objects.filter(username=username)[0]
         
-        owner = user.user
-
-        portfolio = Stocks.objects.filter(owner__username=owner.username). \
+        portfolio = Stocks.objects.filter(owner=user). \
             order_by("symbol")
         serializer = StocksSerializer(portfolio, many=True)
 
         response_data = {
-            "username": owner.username,
-            "email": owner.email,
+            "username": user.username,
             "portfolio": serializer.data
         }
 
@@ -67,16 +68,16 @@ class ModifyWatchList(APIView):
             "symbol": str_symbol
         }
         '''
-        token = request.headers['Authorization'].split(" ")[1]
-        user = Token.objects.filter(key=token)[0]
+        token_header = request.headers['Authorization'].split(" ")[1]
+        payload = get_payload(token_header)
+        user = User.objects.filter(username=payload['username'])[0]
         
-        owner = user.user
         symbol = request.data['symbol']
 
         # If an index error is raised then the user is not watching the stock.
         # Yea I know its convoluted.
         try:
-            stock_entry = Stocks.objects.filter(owner=owner, symbol=symbol)[0]
+            stock_entry = Stocks.objects.filter(owner=user, symbol=symbol)[0]
             response_data = {
                 "symbol" : symbol,
                 "alert" : "failure",
@@ -84,7 +85,7 @@ class ModifyWatchList(APIView):
             }
             
         except IndexError as ie:
-            stock = Stocks(owner=owner, symbol=symbol)    
+            stock = Stocks(owner=user, symbol=symbol)    
             stock.save()
             response_data = {
                 "symbol" : symbol,
@@ -104,27 +105,28 @@ class ModifyWatchList(APIView):
         }
         '''
         token = request.headers['Authorization'].split(" ")[1]
-        user = Token.objects.filter(key=token)[0]
         
-        owner = user.user
+        payload = get_payload(token)
+        username = payload["username"]
+        user = User.objects.filter(username=username)[0]
         symbol = request.data['symbol']
         
         # If the user is not watching the stock raise an IndexError.
         # Else remove the stock.
         try:
-            stock_entry = Stocks.objects.filter(owner=owner, symbol=symbol)[0]
+            stock_entry = Stocks.objects.filter(owner=user, symbol=symbol)[0]
 
             stock_entry.delete()            
             response_data = {
                 "symbol": symbol,
                 "alert": "success",
-                "message": f"Symbol removed from watch list"   
+                "message": "Symbol removed from watch list"   
             }
         except IndexError as ie:
             response_data = {
                 "symbol": symbol,
                 "alert": "failure",
-                "message": f"User was not watching symbol"  
+                "message": "User was not watching symbol"  
             }
            
         
@@ -132,3 +134,15 @@ class ModifyWatchList(APIView):
 
 
 
+def get_payload(token):
+    """
+    Extract the payload from a JWT token
+    """
+    payload = token.split(".")[1]
+
+    if len(payload) % 4:
+        payload += "=" * (4 - len(payload) % 4)
+    
+    payload = base64.b64decode(payload)
+    payload = json.loads(payload)
+    return payload
