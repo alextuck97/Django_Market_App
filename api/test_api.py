@@ -18,9 +18,9 @@ class WatchModificationTest(TestCase):
             "username": "test_user",
             "password": "testing123"
         }
-        response = self.client.post("/api/rest-auth/login/", data=data, content_type="application/json")
+        response = self.client.post("/api/token-auth/", data=data, content_type="application/json")
         
-        self.token = "Token " + json.loads(response.content)['key']
+        self.token = "JWT " + json.loads(response.content)['token']
         
 
     def test_get_portfolio(self):
