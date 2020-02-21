@@ -7,11 +7,13 @@ from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-
-#from rest_framework.authtoken.models import Token
+from .industry_lists import industry_defaults
+from .query_yahoo import get_ticker_history
 from django.utils import timezone
 import base64
 import json
+import yfinance as yf
+
 # Create your views here.
 
 class CurrentUser(APIView):
@@ -133,6 +135,48 @@ class ModifyWatchList(APIView):
         return Response(response_data)
 
 
+class RequestIndustry(APIView):
+    
+    parser_classes = [JSONParser]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, industry="technology"):
+        '''
+        Get the list of default industries so the front end
+        can start issuing requests for each ticker's info
+        '''
+        
+        try:
+            response_data = {
+                "industry" : industry,
+                "defaults" : industry_defaults[industry]
+            }
+        except KeyError as ke:
+            response_data = {
+                "industry" : "technology",
+                "defaults" : industry_defaults["technology"]
+            }
+
+        return Response(response_data)
+
+
+class RequestTicker(APIView):
+
+    parser_classes = [JSONParser]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, ticker, period="1d", interval="1d"):
+        '''
+        Scrape the requested data and send it back
+        '''
+        response_data = {
+            "ticker" : ticker,
+            "period" : period,
+            "interval" : interval,
+            "payload" : get_ticker_history(ticker, period, interval)
+        }
+
+        return Response(response_data)
 
 def get_payload(token):
     """
