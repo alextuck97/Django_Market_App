@@ -6,6 +6,7 @@ def get_ticker_history(ticker, period="1d", interval="1d"):
     '''
     t = yf.Ticker(ticker)
     h = t.history(period=period, interval=interval)
+    h = h.fillna("NaN")
     if period == "1d" and interval == "1d":
         data = h.iloc[0].to_dict()
         datetime = str(h.iloc[0].name)
