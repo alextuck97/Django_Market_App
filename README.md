@@ -1,6 +1,6 @@
 ## Stock Market App API
 
-The REST api that supports a stock market web app [here](https://github.com/alextuck97/Stock-Market-Simulation-Frontend).
+The REST api that supports a stock market web app written with React [found here](https://github.com/alextuck97/Stock-Market-Simulation-Frontend). This project was deployed to [Heroku](https://stock-vigilant.herokuapp.com/).
 
 Routes implemented allow the user to
 * Create an account
